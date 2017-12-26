@@ -34,4 +34,12 @@ if (cluster.isMaster) {
 			});
 		}, 1050);
 	});
+
+    memored.store('users', [{name: 'Vasya'}, {name: 'Petya'}], function() {
+        console.log('Users stored!');
+
+        memored.read('users', {name: 'Vasya'}, function(err, value) {
+            console.log('Read value:', value);
+        });
+    });
 }

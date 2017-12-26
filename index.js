@@ -102,9 +102,28 @@ function _readCacheValue(message) {
 	}
 
 	if (cacheEntry) {
-		message.responseParams = {
-			value: cacheEntry.value
-		};
+
+		if(message.requestParams.filter && cacheEntry.value instanceof Array){
+
+			message.responseParams = {
+				value: cacheEntry.value.filter(function(item){
+                    var check = true;
+                    for(var key in message.requestParams.filter){
+                        if(message.requestParams.filter.hasOwnProperty(key)){
+                            if(item[key] !== message.requestParams.filter[key]) check = false;
+                        }
+                    }
+                    return check;
+                })
+            };
+
+		}
+		else {
+            message.responseParams = {
+                value: cacheEntry.value
+            };
+		}
+
 		if (cacheEntry.expirationTime) {
 			message.responseParams.expirationTime = cacheEntry.expirationTime;
 		}
@@ -228,15 +247,22 @@ function _setup(options) {
 	}
 }
 
-function _read(key, callback) {
+function _read(key, filter, callback) {
 	if (cluster.isWorker) {
+        if (typeof filter === 'function') {
+            callback = filter;
+            filter = undefined;
+        }
+
 		_sendMessageToMaster({
 			type: 'read',
 			requestParams: {
-				key: key
+				key: key,
+				filter: filter
 			},
 			callback: callback
 		});
+
 	} else {
 		logger.warn('Memored::read# Cannot call this function from master process');
 	}
